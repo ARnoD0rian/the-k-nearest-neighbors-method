@@ -1,11 +1,23 @@
-import networkx as nx
+import random
+import json
 
-# Создаем ориентированный граф
-G = nx.DiGraph()
-G.add_nodes_from([1, 2, 3, 4, 5])
-G.add_edges_from([(1, 2), (2, 3), (3, 4), (4, 5), (5, 1)])
+N = 10
 
-# Генерируем гамильтонов цикл
-hamiltonian_cycle = list(nx.hamiltonian_cycle(G))
+def gamilton_generation(number: int)->None:
+    data = {"num_vertex": N, "vertexes": [], "edges": []}
+    isEdges = [[False for _ in range(N)] for _ in range(N)]
+    for i in range(N):
+        isEdges[i][(i+1) % N] = True
+        data["vertexes"].append({"x": random.randint(1, 600), "y": random.randint(1, 400)})
+        data["edges"].append({"from": i+1, "to": i+2, "weight": random.randint(1, 100)})
+        
+    data["edges"][-1]["to"] = 1
+    with open(f"tests/test_{number}.json", "w") as file:
+        json.dump(data, file)
 
-print("Гамильтонов цикл:", hamiltonian_cycle)
+def main():
+    for i in range(N):
+        gamilton_generation(i)
+
+if __name__ == "__main__":
+    main()
