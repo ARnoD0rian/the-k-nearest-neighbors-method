@@ -17,6 +17,9 @@ class GUI:
     
         self.root = root
         self.root.title(title)
+        self.root.geometry('1200x400')
+        self.root['background'] = "#EDE7E6"
+        self.root.resizable(False, False)
 
         self.canvas = tk.Canvas(self.root, width=600, height=400, bg='white')
         self.canvas.pack(side=tk.LEFT)
@@ -45,31 +48,36 @@ class GUI:
         self.add_button = ttk.Button(self.root, text="Add Edge", command=self.add_edge)
         self.add_button.pack()
         
+        self.read_button = ttk.Button(self.root, text="read json", command=self.read_json)
+        self.read_button.pack()
+        
         self.canvas.bind("<Button-1>", self.add_vertex)
 
         self.root.mainloop()
 
     def add_vertex(self, event) -> None:
         x, y = event.x, event.y
-        self._vertex_num += 1
+        self.draw_vertex((x, y))
         
+        
+    def draw_vertex(self, coordinate: tuple) -> None:
+        x, y = coordinate
+        self._vertex_num += 1
         self.canvas.create_oval(x-10, y-10, x+10, y+10, fill='green')
         self.canvas.create_text(x, y, text=str(self._vertex_num), fill='white') 
-        
         self._vertex.append((x, y))
-        if self._vertex_num == 6: self.read_json()
     
     def add_edge(self) -> None:
         from_vertex = int(self.from_entry.get())
         to_vertex = int(self.to_entry.get())
         weight = int(self.weight_entry.get())
         
-        if from_vertex > 0 and from_vertex < self._vertex_num and to_vertex > 0 and to_vertex < self._vertex_num:
+        if from_vertex > 0 and from_vertex <= self._vertex_num and to_vertex > 0 and to_vertex <= self._vertex_num:
             self.draw_edge(from_vertex, to_vertex, weight)
         else:
             return
         
-    def draw_edge(self, from_vertex, to_vertex, weight):
+    def draw_edge(self, from_vertex: int, to_vertex: int, weight: int) -> None:
             self.tree.insert('', 'end', values=(from_vertex, to_vertex, weight))
             self._edge.append({"from": from_vertex, "to": to_vertex, "weight": weight})
             self._edge_num += 1
@@ -102,14 +110,17 @@ class GUI:
         
         return o_1 if (x_1 - o_1[0])**2 + (y_1 - o_1[1]) ** 2 < (x_1 - o_2[0])**2 + (y_1 - o_2[1]) ** 2 else o_2
     
-    def read_json(self, name = "data/data.json"):
+    def read_json(self, name = "data/data.json") -> None:
         with open(f"{name}", 'r') as file:
             data = json.load(file)
-            if data["num_vertex"] > self._vertex_num: return
+            
+            for i in range(len(data["vertexes"])):
+                print(data["vertexes"][i])
+                vertex = (data["vertexes"][i]["x"], data["vertexes"][i]["y"])
+                self.draw_vertex(vertex)
             
             for i in range(len(data["edges"])):
                 edge = data["edges"][i]
-                self._edge.append(edge)
                 self.draw_edge(edge["from"], edge["to"], edge["weight"])
                 
                 
