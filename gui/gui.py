@@ -6,7 +6,7 @@ import os
 from tkinter.messagebox import showerror, showinfo
 from tkinter.simpledialog import askstring
 import networkx as nx
-from algoritm.classic import Algoritm
+from algoritm.polupationMod import Algoritm
 
 class GUI:
     def __init__(self, root: tk.Tk, title: str) -> None:
@@ -125,6 +125,13 @@ class GUI:
         if not os.path.isfile(name):
             showerror(title="ошибка", message="файл не найден")
         
+        self.canvas.delete("all")
+        self._edge.clear()
+        self._vertex.clear()
+        self._vertex_num = 0
+        self._edge_num = 0
+        self.tree.delete(*self.tree.get_children())
+        
         with open(f"{name}", 'r') as file:
             data = json.load(file)
             
@@ -156,7 +163,7 @@ class GUI:
         for i in range(len(self._edge)):
             self.draw_edge(self._edge[i]["from"], self._edge[i]["to"], self._edge[i]["weight"])
             
-        way = "1"
+        way = f"{self._edge[0]['from']}"
         sum = 0
         for edge in self._edge:
             sum += edge["weight"]

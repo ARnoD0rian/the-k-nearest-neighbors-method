@@ -34,6 +34,7 @@ class Algoritm:
                 
                 if all([visited[x] for x in self._graph.nodes]) and self._graph.has_edge(vertex, 1):
                     way.append({"from": vertex, "to": 1, "weight": self._graph[vertex][1]["weight"]})
+                    return way
                 
                 return way
                     
