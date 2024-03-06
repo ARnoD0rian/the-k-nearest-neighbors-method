@@ -4,8 +4,10 @@ import matplotlib.pyplot as plt
 import queue as q
 import random
 import copy
+import math
 
 NUM_INDIVID = 200
+FUNCTION = lambda x: (1/math.exp(x))
 
 class Algoritm:
     def __init__(self) -> None:
@@ -13,12 +15,12 @@ class Algoritm:
         self._result = nx.DiGraph()
         
     def init_graph(self, vertex_num: int, edges: list[dict]):
-        self._graph.add_nodes_from([(x+1) for x in range(NUM_INDIVID)])
+        self._graph.add_nodes_from([(x+1) for x in range(vertex_num)])
         for edge in edges:
             self._graph.add_edge(edge["from"], edge["to"], weight = edge["weight"])
             
     def search_gamiltonov_cycle(self) -> list[dict]:
-        individs = [Individ(self._graph) for _ in range(len(list(self._graph.nodes)))]
+        individs = [Individ(self._graph) for _ in range(NUM_INDIVID)]
         for i in range(len(individs)): individs[i].algoritm()
         best_individ = min(individs, key= lambda ind: ind.way_long)
         return best_individ.way
@@ -61,7 +63,7 @@ class Individ:
             for neighbor in self._graph.neighbors(vertex):
                 if not self._visited[neighbor]:
                     neighbors.append((neighbor, self._graph[vertex][neighbor]["weight"]))
-                    rand_coefficient.append(1 / neighbors[-1][1])
+                    rand_coefficient.append(FUNCTION(neighbors[-1][1]))
                     
             if len(neighbors) > 0:
                 new_vertex = random.choices(neighbors, rand_coefficient)[0]

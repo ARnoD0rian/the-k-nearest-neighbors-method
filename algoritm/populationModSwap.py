@@ -98,7 +98,7 @@ class Individ:
         while new_way_long < way_long:
             way_long = new_way_long
             while True:
-                test_way_node, test_way, test_way_long = self.swap_vertexes(way_node.copy(), copy.deepcopy(way), way_long, i, k)
+                test_way_node, test_way, test_way_long = self.swap_vertexes(way_node.copy(), way.copy(), way_long, i, k)
                 if test_way_long < way_long:
                     way_node = test_way_node.copy()
                     way = test_way.copy()
@@ -107,8 +107,7 @@ class Individ:
                 i = (i + 1) % len(way_node)
                 if i == i_start:
                     k += 1
-                    if k == len(way_node): break 
-                if test_way_long <= 0: return way, 10**6      
+                    if k == len(way_node): break    
             new_way_long = test_way_long
         
         for i in range(len(way_node)):
@@ -117,46 +116,68 @@ class Individ:
         return way, way_long
     
             
-    def swap_vertexes(self, way_node, way, way_long, index, k = 1) -> tuple[list, list, int]:
-        if k == 1:
-            index_0 = (index - 1 + len(way_node)) % len(way_node)
-            index_1 = index
-            index_2 = (index + 1) % len(way_node)
-            index_3 = (index + 2) % len(way_node)
-
-            way_long -= way[index_0]["weight"] + way[index_1]["weight"] + way[index_2]["weight"]
-            way_node[index_1], way_node[index_2] = way_node[index_2], way_node[index_1]
-            way[index_0]["weight"] = self._graph[way_node[index_0]][way_node[index_1]]["weight"]
-            way[index_1]["weight"] = self._graph[way_node[index_1]][way_node[index_2]]["weight"]
-            way[index_2]["weight"] = self._graph[way_node[index_2]][way_node[index_3]]["weight"]
-
-            way_long += way[index_0]["weight"] + way[index_1]["weight"] + way[index_2]["weight"]
+    def swap_vertexes(self, way_vertexes, way_edges, way_long, index, k = 1) -> tuple[list, list[dict], int]:
+        index_1 = index
+        index_2 = (index + k) % len(way_vertexes)
+        # нахождения вершин, соответстствуюющих индексам и их соседей
+        vertex_pred_1 = way_vertexes[(index_1 - 1 + len(way_vertexes)) % len(way_vertexes)]
+        vertex_pred_2 = way_vertexes[(index_2 - 1 + len(way_vertexes)) % len(way_vertexes)]
+        vertex_1 = way_vertexes[index_1]
+        vertex_2 = way_vertexes[index_2]
+        vertex_last_1 = way_vertexes[(index_1 + 1) % len(way_vertexes)]
+        vertex_last_2 = way_vertexes[(index_2 + 1) % len(way_vertexes)]
         
-        else:
-            i_indexs = [
-                (index - 1 + len(way_node)) % len(way_node),
-                index,
-                (index + 1) % len(way_node)
-            ]
-            k_indexs = [
-                (index + k - 1 + len(way_node)) % len(way_node),
-                (index + k) % len(way_node),
-                (index + k + 1) % len(way_node)  
-            ]
-
-
-            way_long -= sum([way[j]["weight"] for j in i_indexs]) + sum([way[j]["weight"] for j in k_indexs])
-            if k == 2: way_long += way[i_indexs[2]]["weight"]
-            way_node[i_indexs[1]], way_node[k_indexs[1]] = way_node[k_indexs[1]], way_node[i_indexs[1]]
-
-            for j in range(2):
-                way[i_indexs[j]]["weight"] = self._graph[way_node[i_indexs[j]]][way_node[i_indexs[j+1]]]["weight"]
-                way[k_indexs[j]]["weight"] = self._graph[way_node[k_indexs[j]]][way_node[k_indexs[j+1]]]["weight"]
-
-            way_long += sum([way[j]["weight"] for j in i_indexs]) + sum([way[j]["weight"] for j in k_indexs])
-            if k == 2: way_long -= way[i_indexs[2]]["weight"]
-        
-        return way_node, way, way_long      
+        if vertex_pred_1 == vertex_2 or vertex_last_1 == vertex_2: # проверяем вершины на соседство
+            if vertex_pred_1 == vertex_2:
+                # проверяем на возмонжность перестановки
+                can_swap = (self._graph.has_edge(vertex_pred_2, vertex_1)
+                            and self._graph.has_edge(vertex_2, vertex_last_1)
+                            and self._graph.has_edge(vertex_1, vertex_2))
                 
-            
-            
+                if can_swap:
+                    way_long += self._graph[vertex_pred_2][vertex_1]["weight"] + self._graph[vertex_1][vertex_2]["weight"] +  \
+                        self._graph[vertex_2][vertex_last_1]["weight"] - way_edges[(index_2 - 1 + len(way_vertexes)) % len(way_vertexes)]["weight"] - \
+                            way_edges[index_2]["weight"] - way_edges[index_1]["weight"]
+                        
+                    way_edges[(index_2 - 1 + len(way_vertexes)) % len(way_vertexes)] = \
+                    {"from": vertex_pred_2, "to": vertex_1, "weight": self._graph[vertex_pred_2][vertex_1]["weight"]}
+                    way_edges[index_2] = {"from": vertex_1, "to": vertex_2, "weight": self._graph[vertex_1][vertex_2]["weight"]}
+                    way_edges[index_1] = {"from": vertex_2, "to": vertex_last_1, "weight": self._graph[vertex_2][vertex_last_1]["weight"]}
+                    
+            if vertex_last_1 == vertex_2:
+                can_swap = (self._graph.has_edge(vertex_pred_1, vertex_2)
+                            and self._graph.has_edge(vertex_1, vertex_last_2)
+                            and self._graph.has_edge(vertex_2, vertex_1))
+                
+                if can_swap:
+                    way_long += self._graph[vertex_pred_1][vertex_2]["weight"] + self._graph[vertex_2][vertex_1]["weight"] + \
+                        self._graph[vertex_1][vertex_last_2]["weight"] - way_edges[(index_1 - 1 + len(way_vertexes)) % len(way_vertexes)]["weight"] -\
+                             way_edges[index_1]["weight"] - way_edges[index_2]["weight"]
+                             
+                    way_edges[(index_1 - 1 + len(way_vertexes)) % len(way_vertexes)] = \
+                    {"from": vertex_pred_1, "to": vertex_2, "weight": self._graph[vertex_pred_1][vertex_2]["weight"]}
+                    way_edges[index_1] = {"from": vertex_2, "to": vertex_1, "weight": self._graph[vertex_2][vertex_1]["weight"]}
+                    way_edges[index_2] = {"from": vertex_1, "to": vertex_last_2, "weight": self._graph[vertex_1][vertex_last_2]["weight"]}
+                      
+        else: # если не соседи, то алгоритм работы  другой
+            can_swap = (self._graph.has_edge(vertex_pred_1, vertex_2) 
+                        and self._graph.has_edge(vertex_2, vertex_last_1) 
+                        and self._graph.has_edge(vertex_pred_2, vertex_1) 
+                        and self._graph.has_edge(vertex_1, vertex_last_2))
+
+            if can_swap: 
+                way_long += self._graph[vertex_pred_1][vertex_2]["weight"] + self._graph[vertex_2][vertex_last_1]["weight"] + \
+                    self._graph[vertex_pred_2][vertex_1]["weight"] + self._graph[vertex_1][vertex_last_2]["weight"] - \
+                        way_edges[(index_1 - 1 + len(way_vertexes)) % len(way_vertexes)]["weight"] - way_edges[index_1]["weight"] - \
+                            way_edges[(index_2 - 1 + len(way_vertexes)) % len(way_vertexes)]["weight"] - way_edges[index_2]["weight"]
+                
+                way_edges[(index_1 - 1 + len(way_vertexes)) % len(way_vertexes)] = \
+                {"from": vertex_pred_1, "to": vertex_2, "weight": self._graph[vertex_pred_1][vertex_2]["weight"]}
+                way_edges[index_1] = {"from": vertex_2, "to": vertex_last_1, "weight": self._graph[vertex_2][vertex_last_1]["weight"]}
+                way_edges[(index_2 - 1 + len(way_vertexes)) % len(way_vertexes)] = \
+                {"from": vertex_pred_2, "to": vertex_1, "weight": self._graph[vertex_pred_2][vertex_1]["weight"]}
+                way_edges[index_2] = {"from": vertex_1, "to": vertex_last_2, "weight": self._graph[vertex_1][vertex_last_2]["weight"]}
+
+        if can_swap: way_vertexes[index_1], way_vertexes[index_2] = way_vertexes[index_2], way_vertexes[index_1] # swap вершин в массиве
+        
+        return way_vertexes, way_edges, way_long
