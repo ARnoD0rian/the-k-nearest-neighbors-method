@@ -1,6 +1,5 @@
 import networkx as nx
 import copy
-import random
 
 
 class Algoritm:
